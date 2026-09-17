@@ -79,9 +79,9 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
   - Otherwise → runs a full `scan()` on the `FoodProducts` table (used by `/products`)
   - Handles pagination via `LastEvaluatedKey`
   - Converts DynamoDB `Decimal` types to plain integers and renames fields to match the frontend's expected JSON shape (`price_in_cents_int`, `product_name_str`, etc.)
+<img width="1568" height="676" alt="05-lambda-code-placeholders" src="https://github.com/user-attachments/assets/4be8fbf8-b332-45ce-a074-5e7cda7ea31a" />
 
-  ![Lambda code before fix — placeholders still present](screenshots/05-lambda-code-placeholders.png)
-  ![Lambda code after fix — real table/index names set](screenshots/07-lambda-code-fixed-tablename-index.png)
+<img width="1568" height="647" alt="07-lambda-code-fixed-tablename-index" src="https://github.com/user-attachments/assets/432ee633-68fd-4890-8610-3287b3844d97" />
 
 ### 2. `create_report`
 - **Runtime:** Python 3.10
@@ -93,7 +93,7 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
   ```
   (To be enhanced with real logic in a later Cognito authentication lab.)
 
-  ![create_report test succeeded](screenshots/18-createreport-test-succeeded.png)
+<img width="1568" height="607" alt="18-createreport-test-succeeded" src="https://github.com/user-attachments/assets/5f8aa865-4fd8-4b52-b721-b3e5196b5eee" />
 
 ---
 
@@ -101,22 +101,22 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
 
 | Step | Screenshot |
 |---|---|
-| Confirming `boto3` (AWS SDK for Python) is installed in the VS Code IDE | ![boto3 installed](screenshots/01-vscode-boto3-installed.png) |
-| DynamoDB `FoodProducts` table + `special_GSI` index — both **Active** | ![DynamoDB table active](screenshots/02-dynamodb-table-active.png) |
-| First attempt to wire API Gateway to Lambda — function not found yet | ![Invalid ARN error](screenshots/03-lambda-invalid-arn-error.png) |
-| Selecting the function correctly from the ARN dropdown | ![ARN dropdown selected](screenshots/04-lambda-arn-dropdown-selected.png) |
-| Updating deployed Lambda code directly from an S3 object | ![Update from S3 dialog](screenshots/06-lambda-update-from-s3-dialog.png) |
-| Creating the `onOffer` test event | ![Create test event 1](screenshots/08-lambda-create-test-event-onoffer-1.png) ![Create test event 2](screenshots/09-lambda-create-test-event-onoffer-2.png) |
-| Enabling CORS on `/products` | ![CORS enabled](screenshots/10-apigateway-cors-enabled-products.png) |
-| Correcting the CORS `Access-Control-Allow-Origin` value to a plain `*` | ![CORS wildcard fixed](screenshots/11-apigateway-cors-settings-correct-wildcard.png) |
-| Adding a Mapping Template so API Gateway passes `$context.resourcePath` into the Lambda event | ![Mapping template](screenshots/12-apigateway-mapping-template.png) |
-| `/products/on_offer` resource wired to Lambda | ![on_offer methods](screenshots/13-apigateway-on-offer-resource-methods.png) |
-| Deploying the API to the `prod` stage | ![Deploy success](screenshots/14-apigateway-deploy-success-prod.png) |
-| First attempt to wire `/create_report` — function didn't exist yet | ![create_report invalid ARN](screenshots/15-createreport-invalid-arn-error.png) |
-| Lambda function list before `create_report` was created | ![Functions list](screenshots/16-lambda-functions-list-before-createreport.png) |
-| `create_report` test event configuration | ![Test event JSON](screenshots/17-createreport-test-event-json.png) |
-| Full menu ("view all") on the live website — 26 items | ![View all](screenshots/19-website-view-all-26-items.png) |
-| Default "on offer" view on the live website — 6 items | ![On offer](screenshots/20-website-on-offer-6-items.png) |
+| Confirming `boto3` (AWS SDK for Python) is installed in the VS Code IDE | <img width="1568" height="709" alt="01-vscode-boto3-installed" src="https://github.com/user-attachments/assets/6183be99-853d-47d4-8e63-ce5bae9c5501" />|
+| DynamoDB `FoodProducts` table + `special_GSI` index — both **Active** |<img width="1568" height="643" alt="02-dynamodb-table-active" src="https://github.com/user-attachments/assets/f63b3213-ef1d-4b26-b110-524eb7af6b77" />|
+| First attempt to wire API Gateway to Lambda — function not found yet | <img width="1030" height="155" alt="03-lambda-invalid-arn-error" src="https://github.com/user-attachments/assets/24a6de28-291f-4145-a1cf-ec06bc22c416" />|
+| Selecting the function correctly from the ARN dropdown |<img width="1568" height="588" alt="04-lambda-arn-dropdown-selected" src="https://github.com/user-attachments/assets/2655aa8d-b212-4b10-a22d-c8829e8c8fca" />|
+| Updating deployed Lambda code directly from an S3 object | <img width="998" height="681" alt="06-lambda-update-from-s3-dialog" src="https://github.com/user-attachments/assets/48047aac-a9ab-4549-b55c-e9fa6c062605" />|
+| Creating the `onOffer` test event | ![Create test event 1](screenshots/08-lambda-create-test-event-onoffer-1.png) ![Create test event 2](screenshots/09-lambda-create-test-event-onoffer-2.png)|
+| Enabling CORS on `/products` |<img width="1568" height="673" alt="10-apigateway-cors-enabled-products" src="https://github.com/user-attachments/assets/639c0ec8-fc58-45eb-a2e5-eda35d482505" />|
+| Correcting the CORS `Access-Control-Allow-Origin` value to a plain `*` |<img width="1568" height="659" alt="11-apigateway-cors-settings-correct-wildcard" src="https://github.com/user-attachments/assets/23bbf729-ec55-485a-a2fe-f1c10c3b8242" />|
+| Adding a Mapping Template so API Gateway passes `$context.resourcePath` into the Lambda event | <img width="1568" height="583" alt="12-apigateway-mapping-template" src="https://github.com/user-attachments/assets/c48f162b-4d76-41d4-b851-f58a1ae91c3b" />|
+| `/products/on_offer` resource wired to Lambda |<img width="1568" height="674" alt="13-apigateway-on-offer-resource-methods" src="https://github.com/user-attachments/assets/34a79868-b5ba-4112-8b1f-912ffba71900" />|
+| Deploying the API to the `prod` stage |<img width="1568" height="666" alt="14-apigateway-deploy-success-prod" src="https://github.com/user-attachments/assets/dbc14b64-7424-4f57-ab57-dc8e8a04edc2" />|
+| First attempt to wire `/create_report` — function didn't exist yet | <img width="1045" height="188" alt="15-createreport-invalid-arn-error" src="https://github.com/user-attachments/assets/30513d39-5a8a-41eb-9ddc-37f34a260142" />|
+| Lambda function list before `create_report` was created |<img width="1568" height="706" alt="16-lambda-functions-list-before-createreport" src="https://github.com/user-attachments/assets/1702a2b3-94a5-4610-a66c-d533b04adfd9" />|
+| `create_report` test event configuration |<img width="1568" height="618" alt="17-createreport-test-event-json" src="https://github.com/user-attachments/assets/ab086e3f-9722-4c51-b2b3-618425607a71" />|
+| Full menu ("view all") on the live website — 26 items |<img width="1568" height="717" alt="19-website-view-all-26-items" src="https://github.com/user-attachments/assets/f091da1c-9ece-40fb-a57d-424d2a754414" />|
+| Default "on offer" view on the live website — 6 items |<img width="1568" height="713" alt="20-website-on-offer-6-items" src="https://github.com/user-attachments/assets/98a7409d-13f3-4d1b-a990-3bc5aad7a3ca" />|
 
 ---
 
@@ -127,45 +127,46 @@ Everything looked done — until the price on the website *refused* to update, n
 ### 🔍 Symptom
 In DynamoDB, the "Apple Pie Slice" item was edited and its price changed from **595** cents ($5.95) to **1999** cents ($19.99).
 
-![DynamoDB edit item — before the price change](screenshots/21-dynamodb-edit-item-before-price-change.png)
+<img width="1568" height="675" alt="21-dynamodb-edit-item-before-price-change" src="https://github.com/user-attachments/assets/736cff2c-fb3d-4429-966b-e8b2e13de7b3" />
 
 The website, however, kept showing **$5.95** — even after a normal refresh:
 
-![Website still showing $5.95](screenshots/22-website-price-not-updated-attempt1.png)
+<img width="1568" height="723" alt="22-website-price-not-updated-attempt1" src="https://github.com/user-attachments/assets/2cf2734e-c12e-41ff-8c41-ed8bc1aec5a4" />
 
 ### Step 1 — Confirm DynamoDB actually saved the new price
 Went back into **DynamoDB → Explore items** and confirmed the table itself was correct — `apple pie slice` now shows `1999` in the `price_in_cents` column:
 
-![DynamoDB confirms price is 1999](screenshots/23-dynamodb-confirms-price-updated-1999.png)
+<img width="1568" height="628" alt="23-dynamodb-confirms-price-updated-1999" src="https://github.com/user-attachments/assets/282e6647-aa5a-4b9d-a372-8e75d9c0da2b" />
+
 
 So the data layer was fine. The problem was somewhere between DynamoDB and the browser.
 
 ### Step 2 — Rule out browser cache
 Tried Incognito mode — still showed the old price:
 
-![Website in Incognito still shows old price](screenshots/24-website-incognito-still-old-price.png)
+<img width="1512" height="805" alt="24-website-incognito-still-old-price" src="https://github.com/user-attachments/assets/a3dc40c1-8039-4a8a-85f3-98f2e18cfa23" />
 
 Then cleared all browsing data (history, cookies, cached images/files) directly in Chrome settings:
 
-![Chrome Delete Browsing Data dialog](screenshots/25-chrome-delete-browsing-data-dialog.png)
+<img width="632" height="701" alt="25-chrome-delete-browsing-data-dialog" src="https://github.com/user-attachments/assets/78f3556b-af0f-461e-b968-f46b26b68fbe" />
 
 Still no change after a hard refresh — ruling out simple HTTP/browser caching.
 
 ### Step 3 — Watch the actual network traffic
 Opened Chrome DevTools → **Network** tab and reloaded the page to capture every request the site makes:
 
-![Network tab before reload](screenshots/26-devtools-network-tab-empty.png)
+<img width="1918" height="867" alt="26-devtools-network-tab-empty" src="https://github.com/user-attachments/assets/ac0027f5-dacf-4d58-bfba-69501c557358" />
 
 After reloading, one entry stood out in the request list: **`all_products_on_offer.json`** — a plain static `.json` file being requested via `xhr`, sitting right next to the real image assets. That file name doesn't belong to anything in this lab's architecture (the real data should only ever come from the API Gateway/Lambda endpoint):
 
-![Network requests list showing the suspicious all_products_on_offer.json request](screenshots/27-devtools-network-mystery-json-file.png)
+<img width="1918" height="928" alt="27-devtools-network-mystery-json-file" src="https://github.com/user-attachments/assets/316a9343-af3b-496a-8981-a13cfe622d05" />
 
 Inspecting that file's response revealed a **hardcoded JSON blob** frozen at the old price — proof the frontend was quietly reading from a bundled static fallback file instead of ever calling the live API.
 
 ### ✅ The Fix
 Tracing this back to the frontend configuration (`config.js`, which tells the site where the live API lives) and the `update_config.py` script that publishes it to S3 resolved the mismatch. After correcting the API base URL configuration and re-publishing `config.js` to the S3 bucket, a fresh load of the site showed the correct, live price:
 
-![Website showing the corrected $19.99 price, live from DynamoDB](screenshots/28-website-fixed-price-1999.png)
+<img width="1918" height="868" alt="28-website-fixed-price-1999" src="https://github.com/user-attachments/assets/5097bcb9-df19-4824-867f-9810426c8b8d" />
 
 **$19.99 — live from DynamoDB.** ✅
 
