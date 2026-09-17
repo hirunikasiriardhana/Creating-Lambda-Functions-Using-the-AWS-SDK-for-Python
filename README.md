@@ -1,6 +1,6 @@
 # ☕ Creating Lambda Functions Using the AWS SDK for Python
 
-> A serverless café ordering website — built on **DynamoDB**, **Lambda**, and **API Gateway**, hosted on **S3** — including a real production-style bug I found and fixed along the way. 🐛➡️✅
+> A serverless café ordering website — built on **DynamoDB**, **Lambda**, and **API Gateway**, hosted on **S3** — including a real bug I found and fixed along the way. 🐛➡️✅
 
 ![AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20DynamoDB%20%7C%20API%20Gateway%20%7C%20S3-orange?logo=amazonaws)
 ![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
@@ -36,8 +36,6 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
           ▼
    AWS Lambda (create_report)
 ```
-
-**What each piece does:**
 
 | Component | Role |
 |---|---|
@@ -82,6 +80,9 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
   - Handles pagination via `LastEvaluatedKey`
   - Converts DynamoDB `Decimal` types to plain integers and renames fields to match the frontend's expected JSON shape (`price_in_cents_int`, `product_name_str`, etc.)
 
+  ![Lambda code before fix — placeholders still present](screenshots/05-lambda-code-placeholders.png)
+  ![Lambda code after fix — real table/index names set](screenshots/07-lambda-code-fixed-tablename-index.png)
+
 ### 2. `create_report`
 - **Runtime:** Python 3.10
 - **Handler:** `create_report_code.lambda_handler`
@@ -92,78 +93,85 @@ By the end, a static HTML/CSS/JS site on S3 talks to a fully serverless backend 
   ```
   (To be enhanced with real logic in a later Cognito authentication lab.)
 
+  ![create_report test succeeded](screenshots/18-createreport-test-succeeded.png)
+
+---
+
+## 🔧 Building & Wiring the Lambda Functions
+
+| Step | Screenshot |
+|---|---|
+| Confirming `boto3` (AWS SDK for Python) is installed in the VS Code IDE | ![boto3 installed](screenshots/01-vscode-boto3-installed.png) |
+| DynamoDB `FoodProducts` table + `special_GSI` index — both **Active** | ![DynamoDB table active](screenshots/02-dynamodb-table-active.png) |
+| First attempt to wire API Gateway to Lambda — function not found yet | ![Invalid ARN error](screenshots/03-lambda-invalid-arn-error.png) |
+| Selecting the function correctly from the ARN dropdown | ![ARN dropdown selected](screenshots/04-lambda-arn-dropdown-selected.png) |
+| Updating deployed Lambda code directly from an S3 object | ![Update from S3 dialog](screenshots/06-lambda-update-from-s3-dialog.png) |
+| Creating the `onOffer` test event | ![Create test event 1](screenshots/08-lambda-create-test-event-onoffer-1.png) ![Create test event 2](screenshots/09-lambda-create-test-event-onoffer-2.png) |
+| Enabling CORS on `/products` | ![CORS enabled](screenshots/10-apigateway-cors-enabled-products.png) |
+| Correcting the CORS `Access-Control-Allow-Origin` value to a plain `*` | ![CORS wildcard fixed](screenshots/11-apigateway-cors-settings-correct-wildcard.png) |
+| Adding a Mapping Template so API Gateway passes `$context.resourcePath` into the Lambda event | ![Mapping template](screenshots/12-apigateway-mapping-template.png) |
+| `/products/on_offer` resource wired to Lambda | ![on_offer methods](screenshots/13-apigateway-on-offer-resource-methods.png) |
+| Deploying the API to the `prod` stage | ![Deploy success](screenshots/14-apigateway-deploy-success-prod.png) |
+| First attempt to wire `/create_report` — function didn't exist yet | ![create_report invalid ARN](screenshots/15-createreport-invalid-arn-error.png) |
+| Lambda function list before `create_report` was created | ![Functions list](screenshots/16-lambda-functions-list-before-createreport.png) |
+| `create_report` test event configuration | ![Test event JSON](screenshots/17-createreport-test-event-json.png) |
+| Full menu ("view all") on the live website — 26 items | ![View all](screenshots/19-website-view-all-26-items.png) |
+| Default "on offer" view on the live website — 6 items | ![On offer](screenshots/20-website-on-offer-6-items.png) |
+
 ---
 
 ## 🐛 The Bug Hunt: "Why isn't my price updating?"
 
-Everything looked done — until the price on the website *refused* to update, no matter how many times DynamoDB said otherwise. Here's how it was tracked down, live, one clue at a time.
+Everything looked done — until the price on the website *refused* to update, no matter how many times DynamoDB said otherwise.
 
 ### 🔍 Symptom
-DynamoDB showed the "Apple Pie Slice" price updated to **1999** cents ($19.99). The website still showed **$5.95** — even in Incognito mode, even after clearing the browser cache.
+In DynamoDB, the "Apple Pie Slice" item was edited and its price changed from **595** cents ($5.95) to **1999** cents ($19.99).
 
-### Step 1 — Rule out the backend
-Called the API Gateway endpoint directly in the browser:
-```
-https://mfg5sv6f03.execute-api.us-east-1.amazonaws.com/prod/products/on_offer
-```
-The raw JSON response came back with `"price_in_cents_int": 1999` — **confirmed correct**. DynamoDB → Lambda → API Gateway chain was healthy. The bug had to be somewhere between the API and the browser.
+![DynamoDB edit item — before the price change](screenshots/21-dynamodb-edit-item-before-price-change.png)
 
-### Step 2 — Rule out browser storage
-Opened DevTools → **Application** tab → checked Local Storage and Session Storage.
+The website, however, kept showing **$5.95** — even after a normal refresh:
 
-![Empty local/session storage](screenshots/01-devtools-application-empty-storage.png)
+![Website still showing $5.95](screenshots/22-website-price-not-updated-attempt1.png)
 
-Both empty. Not a client-side storage issue.
+### Step 1 — Confirm DynamoDB actually saved the new price
+Went back into **DynamoDB → Explore items** and confirmed the table itself was correct — `apple pie slice` now shows `1999` in the `price_in_cents` column:
+
+![DynamoDB confirms price is 1999](screenshots/23-dynamodb-confirms-price-updated-1999.png)
+
+So the data layer was fine. The problem was somewhere between DynamoDB and the browser.
+
+### Step 2 — Rule out browser cache
+Tried Incognito mode — still showed the old price:
+
+![Website in Incognito still shows old price](screenshots/24-website-incognito-still-old-price.png)
+
+Then cleared all browsing data (history, cookies, cached images/files) directly in Chrome settings:
+
+![Chrome Delete Browsing Data dialog](screenshots/25-chrome-delete-browsing-data-dialog.png)
+
+Still no change after a hard refresh — ruling out simple HTTP/browser caching.
 
 ### Step 3 — Watch the actual network traffic
-Opened the **Network** tab and reloaded the page to capture every request the site makes:
+Opened Chrome DevTools → **Network** tab and reloaded the page to capture every request the site makes:
 
-![Full list of network requests](screenshots/02-network-requests-list.png)
+![Network tab before reload](screenshots/26-devtools-network-tab-empty.png)
 
-One entry stood out: **`all_products_on_offer.json`** — a plain static file being requested via `xhr`, sitting right next to the real API calls. That name doesn't belong to anything in the lab's architecture.
+After reloading, one entry stood out in the request list: **`all_products_on_offer.json`** — a plain static `.json` file being requested via `xhr`, sitting right next to the real image assets. That file name doesn't belong to anything in this lab's architecture (the real data should only ever come from the API Gateway/Lambda endpoint):
 
-### Step 4 — Inspect the mystery file
-![Selecting the request in the Network panel](screenshots/03-network-tab-request-selected.png)
+![Network requests list showing the suspicious all_products_on_offer.json request](screenshots/27-devtools-network-mystery-json-file.png)
 
-Opening its **Response** tab revealed the smoking gun: a hardcoded JSON blob, permanently frozen at **`"price_in_cents_int": 595`**, with slightly different descriptions than the real API — proof the frontend was reading from a *stale local fallback file*, never touching the live API at all.
-
-### Step 5 — Find out *why* the frontend was using the fallback file
-Checked `config.js` — the file responsible for telling the frontend where the live API lives:
-
-```js
-window.COFFEE_CONFIG = {
-	API_GW_BASE_URL_STR: null,
-	COGNITO_LOGIN_BASE_URL_STR: null
-};
-```
-
-![config.js showing API_GW_BASE_URL_STR as null](screenshots/04-config-null-bug.png)
-
-**Found it.** `API_GW_BASE_URL_STR` was `null`, so the site had nothing to call — it silently fell back to the bundled static JSON instead of ever reaching API Gateway.
-
-### Step 6 — Trace *why* config.js was never updated
-Dug one level deeper into `update_config.py` — the script meant to push the real API URL up to S3:
-
-```python
-bucket_name = "<FMI_1>"   # 🚩 never replaced!
-```
-
-The placeholder had never been swapped for the real bucket name, so every previous run of the script had been silently failing to upload the corrected `config.js`.
+Inspecting that file's response revealed a **hardcoded JSON blob** frozen at the old price — proof the frontend was quietly reading from a bundled static fallback file instead of ever calling the live API.
 
 ### ✅ The Fix
+Tracing this back to the frontend configuration (`config.js`, which tells the site where the live API lives) and the `update_config.py` script that publishes it to S3 resolved the mismatch. After correcting the API base URL configuration and re-publishing `config.js` to the S3 bucket, a fresh load of the site showed the correct, live price:
 
-1. Filled in the real API Gateway invoke URL in `config.js`.
-2. Replaced `<FMI_1>` in `update_config.py` with the actual S3 bucket name.
-3. Re-ran `python3 update_config.py` → `DONE`.
-4. Hard-refreshed the site.
+![Website showing the corrected $19.99 price, live from DynamoDB](screenshots/28-website-fixed-price-1999.png)
 
-![Apple Pie Slice now showing $19.99 from the live API](screenshots/05-fixed-price-1999.png)
-
-**$19.99, live from DynamoDB.** Description text matched the API exactly. Root cause fully resolved.
+**$19.99 — live from DynamoDB.** ✅
 
 ### 🧠 Root Cause, In One Line
 
-> A leftover placeholder (`<FMI_1>`) in a config-upload script meant the site's API endpoint was never actually configured — so the frontend quietly served stale hardcoded data instead of failing loudly.
+> The frontend had a hardcoded local JSON fallback that looked identical to real data — so instead of failing loudly when the API wasn't reachable/configured correctly, it silently served stale numbers. Tracing actual network requests in DevTools (rather than assuming it was a caching issue) was what surfaced the real cause.
 
 A good reminder that a "silent fallback" can be more dangerous than a hard crash — it looks like everything's working.
 
@@ -171,20 +179,20 @@ A good reminder that a "silent fallback" can be more dangerous than a hard crash
 
 ## 🛠️ Other Issues Fixed During Setup
 
-Beyond the main bug hunt above, several smaller issues came up while building out the Lambda functions and API Gateway integrations. Documented here as a troubleshooting reference.
+Beyond the main bug hunt above, several smaller issues came up while building out the Lambda functions and API Gateway integrations.
 
 | # | Issue | Cause | Fix |
 |---|-------|-------|-----|
 | 1 | `IndentationError` in `*_wrapper.py` | Stray leading whitespace before `ROLE = '...'` | Removed leading whitespace so the line starts at column 0 |
 | 2 | `NoSuchKey` S3 error on `create_function` | The `.zip` deployment package hadn't been uploaded to S3 yet | `zip` → `aws s3 cp` → then run the wrapper script |
-| 3 | `ValidationException: Value '<FMI_1>' at 'tableName'` | `<FMI_1>`/`<FMI_2>` placeholders in `get_all_products_code.py` never replaced, and edits weren't re-deployed to Lambda | Set `TABLE_NAME_STR = 'FoodProducts'` and `INDEX_NAME_STR = 'special_GSI'`; commented out the local test line; re-zipped, re-uploaded, and updated the Lambda function code |
-| 4 | `Invalid Lambda function or Lambda function ARN` in API Gateway | The `create_report` Lambda function hadn't actually been created yet | Verified via the Lambda console function list, then re-ran the wrapper script |
-| 5 | Local test line left active in `create_report_code.py` | `print(lambda_handler(None, None))` re-executes on every invocation if left uncommented | Commented it out |
+| 3 | `ValidationException: Value '<FMI_1>' at 'tableName'` | `<FMI_1>`/`<FMI_2>` placeholders in `get_all_products_code.py` never replaced, and edits weren't re-deployed to Lambda | Set `TABLE_NAME_STR = 'FoodProducts'` and `INDEX_NAME_STR = 'special_GSI'`; commented out the local test line; re-zipped, re-uploaded, and updated the Lambda function code from S3 |
+| 4 | `Invalid Lambda function or Lambda function ARN` in API Gateway (both functions, at different points) | The target Lambda function hadn't actually been created yet | Verified via the Lambda console function list, then re-ran the wrapper script |
+| 5 | Local test line left active in Lambda code | `print(lambda_handler(...))` re-executes on every invocation if left uncommented | Commented it out in both `get_all_products_code.py` and `create_report_code.py` |
 | 6 | CORS header literally set to `*wildcard` | Helper placeholder text was typed into the Allow-Origin field instead of just `*` | Cleared the field and entered only `*` |
 | 7 | `/products/on_offer` returning all 26 items instead of 6 | API Gateway wasn't passing a `path` value to Lambda, so `event.get('path')` was always `None` | Added a Mapping Template: `{"path": "$context.resourcePath"}` |
 | 8 | `{"message":"Missing Authentication Token"}` | Not a bug — caused by hitting the API root path directly, or sending a browser `GET` to a `POST`-only resource | Tested using full resource paths and the console's built-in Test feature |
 
-> ⚠️ **Key takeaway across issues 3 & 5:** editing a local `.py` file does nothing to a deployed Lambda function until you re-zip, re-upload to S3, and explicitly update the function code (or re-run the wrapper script). And always comment out local test invocations (`print(lambda_handler(...))`) before deploying — an active call at module scope re-executes on every cold start.
+> ⚠️ **Key takeaway across issues 3 & 5:** editing a local `.py` file does nothing to a deployed Lambda function until you re-zip, re-upload to S3, and explicitly update the function code (or re-run the wrapper script). And always comment out local test invocations before deploying — an active call at module scope re-executes on every cold start.
 
 ---
 
@@ -201,7 +209,7 @@ Beyond the main bug hunt above, several smaller issues came up while building ou
 | Café website — "on offer" view | ✅ Shows 6 items matching Lambda output |
 | Café website — "view all" | ✅ Shows all 26 items |
 | DynamoDB live price update reflected via direct API call | ✅ Confirmed |
-| DynamoDB live price update reflected on website UI | ✅ Confirmed after fixing `config.js` / `update_config.py` |
+| DynamoDB live price update reflected on website UI | ✅ Confirmed after fixing frontend config |
 
 ---
 
@@ -222,42 +230,22 @@ Beyond the main bug hunt above, several smaller issues came up while building ou
 
 ```
 .
+├── README.md
+├── screenshots/                        # All screenshots referenced in this README
 ├── python_3/
-│   ├── get_all_products_code.py       # Lambda: reads menu data from DynamoDB
-│   ├── get_all_products_wrapper.py    # Creates the Lambda function via boto3
-│   ├── create_report_code.py          # Lambda: report acknowledgment
-│   ├── create_report_wrapper.py       # Creates the Lambda function via boto3
-│   └── update_config.py               # Pushes config.js to S3
+│   ├── get_all_products_code.py        # Lambda: reads menu data from DynamoDB
+│   ├── get_all_products_wrapper.py     # Creates the Lambda function via boto3
+│   ├── create_report_code.py           # Lambda: report acknowledgment
+│   ├── create_report_wrapper.py        # Creates the Lambda function via boto3
+│   └── update_config.py                # Pushes config.js to S3
 └── resources/
-    ├── setup.sh                       # Recreates S3/DynamoDB/API Gateway from prior labs
+    ├── setup.sh                        # Recreates S3/DynamoDB/API Gateway from prior labs
     └── website/
         ├── index.html
-        ├── config.js                  # Frontend ↔ API Gateway link
+        ├── config.js                   # Frontend ↔ API Gateway link
         ├── scripts/
         └── styles/
 ```
-
----
-
-## 📸 Screenshots
-
-| # | Screenshot | Description |
-|---|------------|--------------|
-| 1 | `screenshots/00-vscode-boto3-installed.png` | VS Code terminal confirming boto3 installation |
-| 2 | `screenshots/00-dynamodb-table-details.png` | DynamoDB `FoodProducts` table & `special_GSI` index — Active |
-| 3 | `screenshots/00-dynamodb-explore-items.png` | DynamoDB Explore Items — 26 menu items |
-| 4 | `screenshots/00-apigateway-resources.png` | API Gateway resource tree (`/products`, `/on_offer`, `/create_report`) |
-| 5 | `screenshots/00-lambda-test-products.png` | Lambda "Products" test event — 26 items |
-| 6 | `screenshots/00-lambda-test-onoffer.png` | Lambda "onOffer" test event — 6 items |
-| 7 | `screenshots/00-apigateway-cors-enabled.png` | "Successfully enabled CORS" confirmation |
-| 8 | `screenshots/00-apigateway-onoffer-mapping-template.png` | Mapping template configuration for path passthrough |
-| 9 | `screenshots/00-lambda-create-report-test.png` | `create_report` Lambda test — succeeded |
-| 10 | `screenshots/00-apigateway-deploy-success.png` | "Successfully created deployment" banner (prod stage) |
-| 11 | `screenshots/01-devtools-application-empty-storage.png` | DevTools Application tab — Local/Session Storage confirmed empty |
-| 12 | `screenshots/02-network-requests-list.png` | Network tab showing the suspicious `all_products_on_offer.json` request |
-| 13 | `screenshots/03-network-tab-request-selected.png` | Inspecting the mystery request in the Network panel |
-| 14 | `screenshots/04-config-null-bug.png` | `config.js` showing `API_GW_BASE_URL_STR: null` |
-| 15 | `screenshots/05-fixed-price-1999.png` | Website showing the corrected $19.99 price, live from DynamoDB |
 
 ---
 
